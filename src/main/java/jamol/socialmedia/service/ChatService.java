@@ -1,5 +1,6 @@
 package jamol.socialmedia.service;
 
+import jamol.socialmedia.dto.ResponseDTO;
 import jamol.socialmedia.entity.Chat;
 import jamol.socialmedia.entity.User;
 import jamol.socialmedia.repository.ChatRepository;

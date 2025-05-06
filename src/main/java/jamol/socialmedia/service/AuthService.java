@@ -3,6 +3,7 @@ package jamol.socialmedia.service;
 import jamol.socialmedia.dto.JwtResponseDTO;
 import jamol.socialmedia.dto.LoginDTO;
 import jamol.socialmedia.dto.RegisterDTO;
+import jamol.socialmedia.entity.Role;
 import jamol.socialmedia.entity.User;
 import jamol.socialmedia.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,8 +11,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -23,9 +22,20 @@ public class AuthService {
     private final JwtService jwtService;
 
     // Ro‘yxatdan o‘tish
+    // Ro‘yxatdan o‘tish
     public JwtResponseDTO register(RegisterDTO registerDTO) {
         if (userRepository.existsByUsername(registerDTO.username())) {
             throw new RuntimeException("Bunday foydalanuvchi mavjud!");
+        }
+
+        if (userRepository.existsByEmail(registerDTO.email())) {
+            throw new RuntimeException("Bu email allaqachon ro‘yxatdan o‘tgan!");
+        }
+
+        Role userRole = registerDTO.role(); // <-- foydalanuvchidan kelyapti
+
+        if (userRole == null) {
+            throw new RuntimeException("Foydalanuvchi roli bo‘sh bo‘lishi mumkin emas!");
         }
 
         User user = User.builder()
@@ -33,7 +43,7 @@ public class AuthService {
                 .fullName(registerDTO.firstName() + " " + registerDTO.lastName())
                 .email(registerDTO.email())
                 .password(passwordEncoder.encode(registerDTO.password()))
-                .role(registerDTO.role()) // <- User kiritgan rol
+                .role(userRole)
                 .build();
 
         userRepository.save(user);
@@ -53,7 +63,6 @@ public class AuthService {
                 )
         );
 
-        // Foydalanuvchini topish
         User user = userRepository.findByUsername(loginDTO.username())
                 .orElseThrow(() -> new RuntimeException("Foydalanuvchi topilmadi"));
 

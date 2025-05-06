@@ -1,5 +1,6 @@
 package jamol.socialmedia.controller;
 
+import jamol.socialmedia.dto.ResponseDTO;
 import jamol.socialmedia.entity.Chat;
 import jamol.socialmedia.service.ChatService;
 import lombok.RequiredArgsConstructor;

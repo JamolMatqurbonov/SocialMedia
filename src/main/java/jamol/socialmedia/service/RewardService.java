@@ -6,6 +6,8 @@ import jamol.socialmedia.entity.User;
 import jamol.socialmedia.repository.RewardRepository;
 import jamol.socialmedia.repository.UserRepository;
 import jamol.socialmedia.repository.PostRepository;
+import jamol.socialmedia.dto.MessageRequestDTO;
+import jamol.socialmedia.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +17,10 @@ public class RewardService {
 
     private final RewardRepository rewardRepository;
     private final UserRepository userRepository;
-    private final PostRepository postRepository;  // PostRepository qo'shildi
+    private final PostRepository postRepository;
+    private final MessageService messageService;  // MessageService qo'shildi
 
-    // Foydalanuvchiga mukofot berish
+    // Foydalanuvchiga mukofot berish va xabar yuborish
     public RewardDTO awardReward(Long userId) {
         // Foydalanuvchini olish
         User user = userRepository.findById(userId)
@@ -54,6 +57,16 @@ public class RewardService {
 
         // Mukofotni saqlash
         reward = rewardRepository.save(reward);
+
+        // Xabar yuborish (MessageRequestDTO yaratish)
+        MessageRequestDTO messageDTO = new MessageRequestDTO(
+                user.getId(),  // senderId
+                user.getId(),  // receiverId (foydalanuvchi o'ziga yuboradi)
+                rewardMessage  // Xabar mazmuni
+        );
+
+        // Xabarni yuborish
+        messageService.sendMessage(messageDTO);
 
         // DTO shaklida qaytarish
         return new RewardDTO(reward.getId(), reward.getReason());

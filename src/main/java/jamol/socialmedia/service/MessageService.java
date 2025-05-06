@@ -39,18 +39,6 @@ public class MessageService {
         return mapToDTO(message);
     }
 
-    // Foydalanuvchining yuborgan yoki olgan xabarlari
-    public List<MessageResponseDTO> getMessages(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Foydalanuvchi topilmadi"));
-
-        List<Message> messages = messageRepository.findBySenderOrReceiver(user, user);
-
-        return messages.stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-    }
-
     // DTOga aylantirish
     private MessageResponseDTO mapToDTO(Message message) {
         return new MessageResponseDTO(

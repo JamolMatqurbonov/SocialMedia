@@ -24,17 +24,18 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // Auth endpointlar uchun ruxsat
-                        .anyRequest().authenticated() // Qolgan barcha so‘rovlar uchun autentifikatsiya talab qilinadi
+                        .requestMatchers("/api/auth/**").permitAll() // To‘g‘ri endpoint
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Har bir so‘rov mustaqil
-                .authenticationProvider(authenticationProvider) // AuthenticationProvider qo'shish
-                .csrf(AbstractHttpConfigurer::disable) // CSRF himoyasini o'chirish (REST API uchun)
-                .cors(AbstractHttpConfigurer::disable); // CORS sozlamalari
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(authenticationProvider)
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable);
 
         return httpSecurity.build();
     }
+
 
     // AuthenticationManager beanini yaratish
     @Bean

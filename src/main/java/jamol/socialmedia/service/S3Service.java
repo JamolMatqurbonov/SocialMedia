@@ -43,8 +43,6 @@ public class S3Service {
 
     /**
      * Faylni olish uchun URL olish
-     * @param fileName Fayl nomi
-     * @return Faylning URL manzili
      */
     public String getFileUrl(String fileName) {
         // Faylni olish uchun S3 URL yaratish
@@ -53,7 +51,6 @@ public class S3Service {
 
     /**
      * Faylni o‘chirish
-     * @param fileName Fayl nomi
      */
     public void deleteFile(String fileName) {
         s3Client.deleteObject(bucketName, fileName);
