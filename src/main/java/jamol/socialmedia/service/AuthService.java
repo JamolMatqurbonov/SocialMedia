@@ -3,7 +3,6 @@ package jamol.socialmedia.service;
 import jamol.socialmedia.dto.JwtResponseDTO;
 import jamol.socialmedia.dto.LoginDTO;
 import jamol.socialmedia.dto.RegisterDTO;
-import jamol.socialmedia.entity.Role;
 import jamol.socialmedia.entity.User;
 import jamol.socialmedia.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,41 +20,79 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
-    // Ro‘yxatdan o‘tish
-    // Ro‘yxatdan o‘tish
-    public JwtResponseDTO register(RegisterDTO registerDTO) {
-        if (userRepository.existsByUsername(registerDTO.username())) {
+    /**
+     * Ro‘yxatdan o‘tish metodi.
+     * @param dto RegisterDTO obyekti (username, password, email, firstName, lastName, role)
+     * @return JwtResponseDTO (token hamda foydalanuvchi ma'lumotlari)
+     */
+    public JwtResponseDTO register(RegisterDTO dto) {
+        // 1. Username va email takrorlanmasligini tekshirish
+        if (userRepository.existsByUsername(dto.username())) {
             throw new RuntimeException("Bunday foydalanuvchi mavjud!");
         }
-
-        if (userRepository.existsByEmail(registerDTO.email())) {
+        if (userRepository.existsByEmail(dto.email())) {
             throw new RuntimeException("Bu email allaqachon ro‘yxatdan o‘tgan!");
         }
 
-        Role userRole = registerDTO.role(); // <-- foydalanuvchidan kelyapti
-
-        if (userRole == null) {
-            throw new RuntimeException("Foydalanuvchi roli bo‘sh bo‘lishi mumkin emas!");
+        // 2. Parol bo‘sh bo‘lmasligi kerak
+        if (dto.password() == null || dto.password().isBlank()) {
+            throw new IllegalArgumentException("Parolni kiritish shart!");
         }
 
+        // 3. Role qiymatini olish, agar bo‘sh bo‘lsa "USER" deb belgilash
+        String roleStr = dto.role();
+        if (roleStr == null || roleStr.isBlank()) {
+            roleStr = "USER";
+        } else {
+            roleStr = roleStr.trim().toUpperCase();
+        }
+        // 4. Rolni validatsiya qilish: faqat "USER" yoki "ADMIN"
+        if (!roleStr.equals("USER") && !roleStr.equals("ADMIN")) {
+            throw new IllegalArgumentException("Noto‘g‘ri ro‘l: " + dto.role());
+        }
+
+        // 5. Yangi foydalanuvchini yaratish
         User user = User.builder()
-                .username(registerDTO.username())
-                .fullName(registerDTO.firstName() + " " + registerDTO.lastName())
-                .email(registerDTO.email())
-                .password(passwordEncoder.encode(registerDTO.password()))
-                .role(userRole)
+                .username(dto.username())
+                .fullName(dto.firstName() + " " + dto.lastName())
+                .email(dto.email())
+                .password(passwordEncoder.encode(dto.password()))
+                .role(roleStr)
+                .blocked(false)
+                .profilePictureUrl(null)
                 .build();
 
+        // 6. Ma'lumotlar bazasiga saqlash
         userRepository.save(user);
 
+        // 7. JWT token yaratish
         String token = jwtService.generateToken(user.getUsername());
 
-        return new JwtResponseDTO(token, "Bearer", user.getId(), user.getUsername(), user.getEmail());
+        // 8. Token va foydalanuvchi ma'lumotlarini qaytarish
+        return new JwtResponseDTO(
+                token,
+                "Bearer",
+                user.getId(),
+                user.getUsername(),
+                user.getEmail()
+        );
     }
 
+    /**
+     * Login qilish metodi.
 
-    // Login qilish
+     */
     public JwtResponseDTO login(LoginDTO loginDTO) {
+        // 1. Foydalanuvchini username orqali tekshirish
+        User user = userRepository.findByUsername(loginDTO.username())
+                .orElseThrow(() -> new RuntimeException("Foydalanuvchi topilmadi"));
+
+        // 2. Parolni tekshirish
+        if (!passwordEncoder.matches(loginDTO.password(), user.getPassword())) {
+            throw new RuntimeException("Parol noto‘g‘ri!");
+        }
+
+        // 3. Avtorizatsiya
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginDTO.username(),
@@ -63,11 +100,17 @@ public class AuthService {
                 )
         );
 
-        User user = userRepository.findByUsername(loginDTO.username())
-                .orElseThrow(() -> new RuntimeException("Foydalanuvchi topilmadi"));
-
+        // 4. JWT token yaratish
         String token = jwtService.generateToken(user.getUsername());
 
-        return new JwtResponseDTO(token, "Bearer", user.getId(), user.getUsername(), user.getEmail());
+        // 5. Token va foydalanuvchi ma'lumotlarini qaytarish
+        return new JwtResponseDTO(
+                token,
+                "Bearer",
+                user.getId(),
+                user.getUsername(),
+                user.getEmail()
+        );
     }
+
 }

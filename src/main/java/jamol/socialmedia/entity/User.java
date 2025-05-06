@@ -29,14 +29,17 @@ public class User implements UserDetails {
     private String password;
 
     @Column(unique = true)
-    private String email    ;
+    private String email;
 
-    private boolean blocked;
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean blocked = false;  // Default qiymat false
 
+    @Column(name = "profile_picture_url")
     private String profilePictureUrl;
 
-    @Enumerated(EnumType.STRING)  // Enumdan foydalanish
-    private Role role;  // Enum shaklida, ROLE_USER, ROLE_ADMIN va h.k.
+    @Column(nullable = false)
+    private String role;  // Role as plain string: "USER", "ADMIN"
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Post> posts = new ArrayList<>();
@@ -52,29 +55,30 @@ public class User implements UserDetails {
     @ManyToMany(mappedBy = "followers")
     private Set<User> following = new HashSet<>();
 
-    // === UserDetails metodlari ===
+    // === UserDetails methods ===
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(() -> role.name());  // Enum ni stringga aylantiradi
+        // use lambda to supply authority string
+        return List.of((GrantedAuthority) () -> this.role);
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return true;  // Doim true qaytaryapti
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return !blocked;  // Agar blocked = true bo‘lsa, locked bo‘ladi
+        return !blocked;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;  // Credentials hech qachon eskirmaydi
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return !blocked;  // Agar blocked bo‘lmasa, foydalanuvchi faollashadi
+        return !blocked;
     }
 }

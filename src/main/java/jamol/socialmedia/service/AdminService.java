@@ -1,6 +1,5 @@
 package jamol.socialmedia.service;
 
-import jamol.socialmedia.entity.Role;
 import jamol.socialmedia.entity.User;
 import jamol.socialmedia.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,16 +11,18 @@ public class AdminService {
 
     private final UserRepository userRepository;
 
-    // Admin rolini foydalanuvchiga tayinlash
+    /**
+     * Assigns the ADMIN role to a user by their ID.
+     */
     public User assignAdminRole(Long userId) {
-        // Foydalanuvchini ID bo‘yicha qidirish
+        // Find user by ID
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Foydalanuvchi topilmadi"));
 
-        // Foydalanuvchini admin qilib o‘zgartirish
-        user.setRole(Role.ADMIN);
+        // Assign ADMIN role (as plain String)
+        user.setRole("ADMIN");
 
-        // Yangilangan foydalanuvchini saqlash
+        // Save and return updated user
         return userRepository.save(user);
     }
 }

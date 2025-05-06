@@ -1,7 +1,5 @@
 package jamol.socialmedia.dto;
 
-import jamol.socialmedia.entity.Role;
-
 public record UserDTO(
         Long id,
         String username,
@@ -9,5 +7,5 @@ public record UserDTO(
         String lastName,
         String email,
         String profilePictureUrl,
-        Role role) {
+        String role) {
 }
