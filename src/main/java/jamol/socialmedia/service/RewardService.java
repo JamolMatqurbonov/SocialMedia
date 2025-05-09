@@ -7,7 +7,6 @@ import jamol.socialmedia.repository.RewardRepository;
 import jamol.socialmedia.repository.UserRepository;
 import jamol.socialmedia.repository.PostRepository;
 import jamol.socialmedia.dto.MessageRequestDTO;
-import jamol.socialmedia.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

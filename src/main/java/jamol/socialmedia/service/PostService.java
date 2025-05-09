@@ -5,15 +5,18 @@ import jamol.socialmedia.dto.PostCreateRequest;
 import jamol.socialmedia.dto.PostDTO;
 import jamol.socialmedia.entity.Post;
 import jamol.socialmedia.entity.User;
+import jamol.socialmedia.exception.PostNotFoundException;
+import jamol.socialmedia.exception.UserNotFoundException;
 import jamol.socialmedia.repository.PostRepository;
 import jamol.socialmedia.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,23 +26,17 @@ public class PostService {
     private final UserRepository userRepository;
     private final S3Service s3Service;
 
-    /**
-     *  Yangi post yaratish xizmati.
-     */
+    @Transactional
     public PostDTO createPost(PostCreateRequest request) throws IOException, MinioException {
-        // Foydalanuvchini tekshiramiz
-        User user = (User) userRepository.findById(request.userId())
-                .orElseThrow(() -> new RuntimeException("Foydalanuvchi topilmadi"));
+        User user = userRepository.findById(request.userId())
+                .orElseThrow(() -> new UserNotFoundException("Foydalanuvchi topilmadi"));
 
-        // Rasm yuklangan bo‘lsa, S3'ga joylaymiz
         String imageUrl = null;
         MultipartFile image = request.image();
         if (image != null && !image.isEmpty()) {
-            // Rasmni yuklash va URL olish
-            imageUrl = s3Service.uploadFile(image);
+            imageUrl = s3Service.getFileUrl(s3Service.uploadFile(image));
         }
 
-        // Post obyektini yig'amiz
         Post post = Post.builder()
                 .user(user)
                 .content(request.content())
@@ -47,12 +44,11 @@ public class PostService {
                 .viewCount(0)
                 .shareCount(0)
                 .likedByUsers(new HashSet<>())
-                .comments(List.of())
+                .comments(new ArrayList<>())
                 .build();
 
         post = postRepository.save(post);
 
-        // DTO shaklida qaytaramiz
         return new PostDTO(
                 post.getId(),
                 user.getId(),
@@ -67,42 +63,35 @@ public class PostService {
         );
     }
 
-    /**
-     *  Postga like bosish (yoki oldingi like'ni bekor qilish).
-     */
+    @Transactional
     public void likePost(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post topilmadi"));
-        User user = (User) userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Foydalanuvchi topilmadi"));
+                .orElseThrow(() -> new PostNotFoundException("Post topilmadi"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Foydalanuvchi topilmadi"));
 
-        // Like toggle logikasi
         if (post.getLikedByUsers().contains(user)) {
-            post.getLikedByUsers().remove(user); // unlike
+            post.getLikedByUsers().remove(user);
         } else {
-            post.getLikedByUsers().add(user);    // like
+            post.getLikedByUsers().add(user);
         }
 
         postRepository.save(post);
     }
 
-    /**
-     *  Post ko‘rishlar sonini oshirish.
-     */
+    @Transactional
     public void incrementViewCount(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post topilmadi"));
+                .orElseThrow(() -> new PostNotFoundException("Post topilmadi"));
 
         post.setViewCount(post.getViewCount() + 1);
         postRepository.save(post);
     }
 
-    /**
-     * Postni ulashish (share) funksiyasi.
-     */
+    @Transactional
     public void sharePost(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post topilmadi"));
+                .orElseThrow(() -> new PostNotFoundException("Post topilmadi"));
 
         post.setShareCount(post.getShareCount() + 1);
         postRepository.save(post);

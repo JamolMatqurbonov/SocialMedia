@@ -47,11 +47,13 @@ dependencies {
     implementation("io.minio:minio:8.5.17")
     implementation("org.imgscalr:imgscalr-lib:4.2")
 
+    implementation 'org.springframework.boot:spring-boot-starter-web'
 
-    // Graylog uchun GELF client
+
+    // GELF (Graylog Extended Log Format) client for Logback
     implementation 'de.siegmar:logback-gelf:3.0.0'
 
-    // Logback (Spring Boot default logger) - Spring Boot bilan avtomatik keladi
+    // Logback for Spring Boot logging (comes by default with Spring Boot)
     implementation 'ch.qos.logback:logback-classic'
 
     // WebSocket qo'shish

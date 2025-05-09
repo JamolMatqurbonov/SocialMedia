@@ -1,46 +1,52 @@
-version: '3'
+version: '3.8'
+
 services:
+  # PostgreSQL - ijtimoiy tarmoq uchun ma'lumotlar bazasi
   postgres:
     image: postgres:15
+    container_name: socialmedia-postgres
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=123
-      - POSTGRES_DB=postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: postgres
     ports:
-      - '5432:5432'
+      - '5432:5432'  # PostgreSQL portini tashqi dunyo bilan ulash
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data  # Ma'lumotlar bazasini saqlash uchun hajm
     networks:
       - base-network
 
+  # MinIO - ob'ekt saqlash (S3 API bilan mos)
   minio:
     image: minio/minio
+    container_name: socialmedia-minio
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - '9002:9002'  # MinIO konsoliga kirish
+      - '9001:9001'  # MinIO admin konsoliga kirish
     volumes:
-      - ~/minio/data:/data
+      - ./minio_data:/data  # Ma'lumotlarni saqlash uchun hajm
     environment:
-      - MINIO_ROOT_USER=user
-      - MINIO_ROOT_PASSWORD=password
-    command:
-      server --console-address :9001 /data
+      MINIO_ROOT_USER: user
+      MINIO_ROOT_PASSWORD: password
+    command: server /data --console-address ":9001"  # MinIO'ni ishga tushirish
     networks:
       - base-network
 
+  # MongoDB - Graylog uchun ma'lumotlar bazasi
   mongodb:
     image: mongo:4.2
-    container_name: mongodb
+    container_name: socialmedia-mongodb
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_data:/data/db  # MongoDB ma'lumotlar bazasi uchun hajm
     networks:
       - graylog
 
+  # Elasticsearch - Graylog uchun matnli qidiruv tizimi
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
-    container_name: elasticsearch
+    container_name: socialmedia-elasticsearch
     volumes:
-      - es_data:/usr/share/elasticsearch/data
+      - es_data:/usr/share/elasticsearch/data  # Elasticsearch ma'lumotlari uchun hajm
     environment:
       - http.host=0.0.0.0
       - transport.host=localhost
@@ -57,34 +63,35 @@ services:
     networks:
       - graylog
 
+  # Graylog - Loglarni to'plash va ko'rsatish
   graylog:
     image: graylog/graylog:4.3
-    container_name: graylog
+    container_name: socialmedia-graylog
     volumes:
-      - graylog_data:/usr/share/graylog/data
-      - graylog_journal:/usr/share/graylog/data/journal
+      - graylog_data:/usr/share/graylog/data  # Graylog ma'lumotlar bazasi
+      - graylog_journal:/usr/share/graylog/data/journal  # Graylog jurnal ma'lumotlari
     environment:
-      - GRAYLOG_PASSWORD_SECRET=somepasswordpepper
-      - GRAYLOG_ROOT_PASSWORD_SHA2=8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
-      - GRAYLOG_HTTP_EXTERNAL_URI=http://127.0.0.1:9000/
-      - GRAYLOG_ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - GRAYLOG_MONGODB_URI=mongodb://mongodb:27017/graylog
+      GRAYLOG_PASSWORD_SECRET: somepasswordpepper
+      GRAYLOG_ROOT_PASSWORD_SHA2: jamol2005
+      GRAYLOG_HTTP_EXTERNAL_URI: http://localhost:9000/  # Graylog konsoliga kirish manzili
+      GRAYLOG_ELASTICSEARCH_HOSTS: http://elasticsearch:9200  # Elasticsearch xosti
+      GRAYLOG_MONGODB_URI: mongodb://mongodb:27017/graylog  # MongoDB xosti
     depends_on:
       - mongodb
       - elasticsearch
     ports:
-      - 9000:9000
-      - 1514:1514
-      - 1514:1514/udp
-      - 12201:12201
-      - 12201:12201/udp
+      - 9000:9000  # Graylog konsoliga kirish porti
+      - 1514:1514  # GELF loglar uchun
+      - 1514:1514/udp  # UDP porti
+      - 12201:12201  # GELF UDP porti
+      - 12201:12201/udp  # GELF UDP porti
     networks:
       - graylog
 
 volumes:
   pg_data:
     driver: local
-  kafka-data:
+  minio_data:
     driver: local
   mongodb_data:
     driver: local
@@ -97,6 +104,6 @@ volumes:
 
 networks:
   base-network:
-    driver: bridge
+    driver: bridge  # PostgreSQL va MinIO uchun tarmoq
   graylog:
-    driver: bridge
+    driver: bridge  # Graylog, Elasticsearch va MongoDB uchun tarmoq

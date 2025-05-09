@@ -50,25 +50,24 @@ public class AuthService {
         if (!roleStr.equals("USER") && !roleStr.equals("ADMIN")) {
             throw new IllegalArgumentException("Noto‘g‘ri ro‘l: " + dto.role());
         }
-
-        // 5. Yangi foydalanuvchini yaratish
+// 5. Yangi foydalanuvchini yaratish
         User user = User.builder()
                 .username(dto.username())
                 .fullName(dto.firstName() + " " + dto.lastName())
                 .email(dto.email())
-                .password(passwordEncoder.encode(dto.password()))
+                .password(passwordEncoder.encode(dto.password())) // Parolni kodlaymiz
                 .role(roleStr)
                 .blocked(false)
                 .profilePictureUrl(null)
                 .build();
 
-        // 6. Ma'lumotlar bazasiga saqlash
+// 6. Ma'lumotlar bazasiga saqlash
         userRepository.save(user);
 
-        // 7. JWT token yaratish
+// 7. JWT token yaratish
         String token = jwtService.generateToken(user.getUsername());
 
-        // 8. Token va foydalanuvchi ma'lumotlarini qaytarish
+// 8. Token va foydalanuvchi ma'lumotlarini qaytarish
         return new JwtResponseDTO(
                 token,
                 "Bearer",
@@ -92,18 +91,10 @@ public class AuthService {
             throw new RuntimeException("Parol noto‘g‘ri!");
         }
 
-        // 3. Avtorizatsiya
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginDTO.username(),
-                        loginDTO.password()
-                )
-        );
-
-        // 4. JWT token yaratish
+        // 3. JWT token yaratish
         String token = jwtService.generateToken(user.getUsername());
 
-        // 5. Token va foydalanuvchi ma'lumotlarini qaytarish
+        // 4. Token va foydalanuvchi ma'lumotlarini qaytarish
         return new JwtResponseDTO(
                 token,
                 "Bearer",
@@ -112,5 +103,6 @@ public class AuthService {
                 user.getEmail()
         );
     }
+
 
 }

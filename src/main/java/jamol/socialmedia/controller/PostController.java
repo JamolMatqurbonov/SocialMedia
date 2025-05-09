@@ -20,12 +20,12 @@ public class PostController {
 
     // Yangi post yaratish
     @PostMapping("/create")
-    public ResponseEntity<PostDTO> createPost( @RequestBody PostCreateRequest request) throws IOException, MinioException {
+    public ResponseEntity<PostDTO> createPost(@ModelAttribute PostCreateRequest request) throws IOException, MinioException {
         PostDTO postDTO = postService.createPost(request);
         return new ResponseEntity<>(postDTO, HttpStatus.CREATED);
     }
 
-    // Postga like qo'shish (yoki bekor qilish)
+    // Postga like qo'shish yoki bekor qilish
     @PostMapping("/{postId}/like/{userId}")
     public ResponseEntity<Void> likePost(@PathVariable Long postId, @PathVariable Long userId) {
         postService.likePost(postId, userId);
